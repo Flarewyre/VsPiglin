@@ -302,9 +302,8 @@ class TitleState extends MusicBeatState
 
 		switch (curBeat)
 		{
-			case 1:
+			case 2:
 				createCoolText(['Original by', 'some kitten', 'sinopolis mawboi', 'ludosmo', 'pixloen']);
-			// credTextShit.visible = true;
 			case 4:
 				deleteCoolText();
 			// credTextShit.visible = false;
