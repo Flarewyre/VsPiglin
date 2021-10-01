@@ -9,7 +9,8 @@ import flixel.addons.util.FlxSimplex;
 import flixel.animation.FlxBaseAnimation;
 import flixel.graphics.frames.FlxAtlasFrames;
 import gameFolder.meta.*;
-import gameFolder.meta.FNFSprite;
+import gameFolder.meta.data.*;
+import gameFolder.meta.data.dependency.FNFSprite;
 import gameFolder.meta.state.PlayState;
 import openfl.utils.Assets as OpenFlAssets;
 
@@ -17,6 +18,10 @@ using StringTools;
 
 class Character extends FNFSprite
 {
+	// By default, this option set to FALSE will make it so that the character only dances twice per major beat hit
+	// If set to on, they will dance every beat, such as Skid and Pump
+	public var quickDancer:Bool = false;
+
 	public var debugMode:Bool = false;
 
 	public var isPlayer:Bool = false;
@@ -32,7 +37,7 @@ class Character extends FNFSprite
 		this.isPlayer = isPlayer;
 
 		var tex:FlxAtlasFrames;
-		antialiasing = true;
+		antialiasing = (!Init.trueSettings.get('Disable Antialiasing'));
 
 		switch (curCharacter)
 		{
@@ -108,12 +113,23 @@ class Character extends FNFSprite
 				animation.addByIndices('danceRight', 'GF Dancing at Gunpoint', [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], "", 24, false);
 
 				playAnim('danceRight');
+			
+			case 'piglin':
+				frames = Paths.getSparrowAtlas('characters/Piglin');
+				animation.addByPrefix('idle', 'Piglin idle', 24);
+
+				animation.addByPrefix('singUP', 'Piglin up', 24, false);
+				animation.addByPrefix('singRIGHT', 'Piglin right', 24, false);
+				animation.addByPrefix('singLEFT', 'Piglin left', 24, false);
+				animation.addByPrefix('singDOWN', 'Piglin down', 24, false);
+
+				playAnim('idle');
 
 			case 'dad':
 				// DAD ANIMATION LOADING CODE
 				tex = Paths.getSparrowAtlas('characters/DADDY_DEAREST');
 				frames = tex;
-				animation.addByPrefix('idle', 'Dad idle dance', 30, false);
+				animation.addByPrefix('idle', 'Dad idle dance', 24, false);
 				animation.addByPrefix('singUP', 'Dad Sing Note UP', 24);
 				animation.addByPrefix('singRIGHT', 'Dad Sing Note RIGHT', 24);
 				animation.addByPrefix('singDOWN', 'Dad Sing Note DOWN', 24);
@@ -129,6 +145,8 @@ class Character extends FNFSprite
 				animation.addByPrefix('singRIGHT', 'spooky sing right', 24, false);
 				animation.addByIndices('danceLeft', 'spooky dance idle', [0, 2, 6], "", 12, false);
 				animation.addByIndices('danceRight', 'spooky dance idle', [8, 10, 12, 14], "", 12, false);
+
+				quickDancer = true;
 
 				playAnim('danceRight');
 			case 'mom':
@@ -153,6 +171,7 @@ class Character extends FNFSprite
 				frames = tex;
 
 				animation.addByPrefix('idle', "Mom Idle", 24, false);
+				animation.addByIndices('idlePost', 'Mom Idle', [10, 11, 12, 13], "", 24, true);
 				animation.addByPrefix('singUP', "Mom Up Pose", 24, false);
 				animation.addByPrefix('singDOWN', "MOM DOWN POSE", 24, false);
 				animation.addByPrefix('singLEFT', 'Mom Left Pose', 24, false);
@@ -167,8 +186,8 @@ class Character extends FNFSprite
 				animation.addByPrefix('idle', 'monster idle', 24, false);
 				animation.addByPrefix('singUP', 'monster up note', 24, false);
 				animation.addByPrefix('singDOWN', 'monster down', 24, false);
-				animation.addByPrefix('singLEFT', 'Monster left note', 24, false);
-				animation.addByPrefix('singRIGHT', 'Monster Right note', 24, false);
+				animation.addByPrefix('singLEFT', 'Monster Right note', 24, false);
+				animation.addByPrefix('singRIGHT', 'Monster left note', 24, false);
 
 				playAnim('idle');
 			case 'monster-christmas':
@@ -211,8 +230,8 @@ class Character extends FNFSprite
 				flipX = true;
 
 			case 'bf':
-				var tex = Paths.getSparrowAtlas('characters/BOYFRIEND');
-				frames = tex;
+				frames = Paths.getSparrowAtlas('characters/BOYFRIEND');
+
 				animation.addByPrefix('idle', 'BF idle dance', 24, false);
 				animation.addByPrefix('singUP', 'BF NOTE UP0', 24, false);
 				animation.addByPrefix('singLEFT', 'BF NOTE LEFT0', 24, false);
@@ -223,14 +242,43 @@ class Character extends FNFSprite
 				animation.addByPrefix('singRIGHTmiss', 'BF NOTE RIGHT MISS', 24, false);
 				animation.addByPrefix('singDOWNmiss', 'BF NOTE DOWN MISS', 24, false);
 				animation.addByPrefix('hey', 'BF HEY', 24, false);
+				animation.addByPrefix('scared', 'BF idle shaking', 24);
+
+				playAnim('idle');
+
+				flipX = true;
+			/*
+				case 'bf-og':
+					frames = Paths.getSparrowAtlas('characters/og/BOYFRIEND');
+
+					animation.addByPrefix('idle', 'BF idle dance', 24, false);
+					animation.addByPrefix('singUP', 'BF NOTE UP0', 24, false);
+					animation.addByPrefix('singLEFT', 'BF NOTE LEFT0', 24, false);
+					animation.addByPrefix('singRIGHT', 'BF NOTE RIGHT0', 24, false);
+					animation.addByPrefix('singDOWN', 'BF NOTE DOWN0', 24, false);
+					animation.addByPrefix('singUPmiss', 'BF NOTE UP MISS', 24, false);
+					animation.addByPrefix('singLEFTmiss', 'BF NOTE LEFT MISS', 24, false);
+					animation.addByPrefix('singRIGHTmiss', 'BF NOTE RIGHT MISS', 24, false);
+					animation.addByPrefix('singDOWNmiss', 'BF NOTE DOWN MISS', 24, false);
+					animation.addByPrefix('hey', 'BF HEY', 24, false);
+					animation.addByPrefix('scared', 'BF idle shaking', 24);
+					animation.addByPrefix('firstDeath', "BF dies", 24, false);
+					animation.addByPrefix('deathLoop', "BF Dead Loop", 24, true);
+					animation.addByPrefix('deathConfirm', "BF Dead confirm", 24, false);
+
+					playAnim('idle');
+
+					flipX = true;
+			 */
+
+			case 'bf-dead':
+				frames = Paths.getSparrowAtlas('characters/BF_DEATH');
 
 				animation.addByPrefix('firstDeath', "BF dies", 24, false);
 				animation.addByPrefix('deathLoop', "BF Dead Loop", 24, true);
 				animation.addByPrefix('deathConfirm', "BF Dead confirm", 24, false);
 
-				animation.addByPrefix('scared', 'BF idle shaking', 24);
-
-				playAnim('idle');
+				playAnim('firstDeath');
 
 				flipX = true;
 
@@ -281,6 +329,7 @@ class Character extends FNFSprite
 				var tex = Paths.getSparrowAtlas('characters/bfCar');
 				frames = tex;
 				animation.addByPrefix('idle', 'BF idle dance', 24, false);
+				animation.addByIndices('idlePost', 'BF idle dance', [8, 9, 10, 11, 12, 13, 14], "", 24, true);
 				animation.addByPrefix('singUP', 'BF NOTE UP0', 24, false);
 				animation.addByPrefix('singLEFT', 'BF NOTE LEFT0', 24, false);
 				animation.addByPrefix('singRIGHT', 'BF NOTE RIGHT0', 24, false);
@@ -411,16 +460,6 @@ class Character extends FNFSprite
 				animation.addByPrefix('shoot4', 'Pico shoot 4', 24, false);
 
 				playAnim('shoot1');
-			case 'piglin':
-				frames = Paths.getSparrowAtlas('characters/Piglin');
-				animation.addByPrefix('idle', 'Piglin idle', 24);
-
-				animation.addByPrefix('singUP', 'Piglin up', 24, false);
-				animation.addByPrefix('singRIGHT', 'Piglin right', 24, false);
-				animation.addByPrefix('singLEFT', 'Piglin left', 24, false);
-				animation.addByPrefix('singDOWN', 'Piglin down', 24, false);
-
-				playAnim('idle');
 			default:
 				// set up animations if they aren't already
 
@@ -511,9 +550,6 @@ class Character extends FNFSprite
 			}
 
 			var dadVar:Float = 4;
-
-			if (curCharacter == 'dad')
-				dadVar = 6.1;
 			if (holdTimer >= Conductor.stepCrochet * dadVar * 0.001)
 			{
 				dance();
@@ -531,6 +567,15 @@ class Character extends FNFSprite
 					playAnim('danceLeft');
 		}
 
+		// Post idle animation (think Week 4 and how the player and mom's hair continues to sway after their idle animations are done!)
+		if (animation.curAnim.finished && animation.curAnim.name == 'idle')
+		{
+			// We look for an animation called 'idlePost' to switch to
+			if (animation.getByName('idlePost') != null)
+				// (( WE DON'T USE 'PLAYANIM' BECAUSE WE WANT TO FEED OFF OF THE IDLE OFFSETS! ))
+				animation.play('idlePost', true, false, 0);
+		}
+
 		super.update(elapsed);
 	}
 
@@ -539,7 +584,7 @@ class Character extends FNFSprite
 	/**
 	 * FOR GF DANCING SHIT
 	 */
-	public function dance()
+	public function dance(?forced:Bool = false)
 	{
 		if (!debugMode)
 		{
@@ -552,20 +597,17 @@ class Character extends FNFSprite
 						danced = !danced;
 
 						if (danced)
-							playAnim('danceRight');
+							playAnim('danceRight', forced);
 						else
-							playAnim('danceLeft');
+							playAnim('danceLeft', forced);
 					}
-
-				case 'spooky':
-					danced = !danced;
-
-					if (danced)
-						playAnim('danceRight');
-					else
-						playAnim('danceLeft');
 				default:
-					playAnim('idle');
+					// Left/right dancing, think Skid & Pump
+					if (animation.getByName('danceLeft') != null && animation.getByName('danceRight') != null)
+						playAnim((animation.curAnim.name == 'danceRight') ? 'danceLeft' : 'danceRight', forced);
+					// Play normal idle animations for all other characters
+					else
+						playAnim('idle', forced);
 			}
 		}
 	}

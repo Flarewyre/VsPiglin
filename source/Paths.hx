@@ -5,14 +5,15 @@ package;
  */
 import flixel.FlxG;
 import flixel.graphics.frames.FlxAtlasFrames;
+import gameFolder.meta.CoolUtil;
 import openfl.utils.AssetType;
 import openfl.utils.Assets as OpenFlAssets;
+import sys.FileSystem;
 
 class Paths
 {
 	// Here we set up the paths class. This will be used to
 	// Return the paths of assets and call on those assets as well.
-	// set the current song extension to either OGG or MP3 depending on the client
 	inline public static var SOUND_EXT = "ogg";
 
 	// level we're loading
@@ -97,7 +98,7 @@ class Paths
 
 	inline static public function txt(key:String, ?library:String)
 	{
-		return getPath('data/$key.txt', TEXT, library);
+		return getPath('$key.txt', TEXT, library);
 	}
 
 	inline static public function xml(key:String, ?library:String)
@@ -114,6 +115,9 @@ class Paths
 	{
 		return getPath('data/$key.json', TEXT, library);
 	}
+
+	inline static public function songJson(song:String, secondSong:String, ?library:String)
+		return getPath('songs/${song.toLowerCase()}/${secondSong.toLowerCase()}.json', TEXT, library);
 
 	static public function sound(key:String, ?library:String)
 	{
@@ -132,12 +136,22 @@ class Paths
 
 	inline static public function voices(song:String)
 	{
-		return getPath('songs/${song.toLowerCase()}/Voices.$SOUND_EXT', MUSIC, null);
+		var voicePath = 'songs/${song.toLowerCase()}/Voices.$SOUND_EXT';
+		if (!FileSystem.exists(getPath(voicePath, MUSIC, null)))
+		{
+			voicePath = 'songs/${CoolUtil.swapSpaceDash(song.toLowerCase())}/Voices.$SOUND_EXT';
+		}
+		return getPath(voicePath, MUSIC, null);
 	}
 
 	inline static public function inst(song:String)
 	{
-		return getPath('songs/${song.toLowerCase()}/Inst.$SOUND_EXT', MUSIC, null);
+		var instPath = 'songs/${song.toLowerCase()}/Inst.$SOUND_EXT';
+		if (!FileSystem.exists(getPath(instPath, MUSIC, null)))
+		{
+			instPath = 'songs/${CoolUtil.swapSpaceDash(song.toLowerCase())}/Inst.$SOUND_EXT';
+		}
+		return getPath(instPath, MUSIC, null);
 	}
 
 	inline static public function image(key:String, ?library:String)
@@ -159,4 +173,6 @@ class Paths
 	{
 		return FlxAtlasFrames.fromSpriteSheetPacker(image(key, library), file('images/$key.txt', library));
 	}
+
+	// WIP STUFFS GONNA GO HERE, HI FLIPPY AND SMOKEY LMAO
 }
