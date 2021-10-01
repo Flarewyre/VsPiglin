@@ -8,8 +8,8 @@ import flixel.util.FlxColor;
 import gameFolder.gameObjects.Note;
 import gameFolder.meta.data.Section.SwagSection;
 import gameFolder.meta.data.Song.SwagSong;
-import gameFolder.meta.state.ChartingState;
 import gameFolder.meta.state.PlayState;
+import gameFolder.meta.state.charting.ChartingState;
 
 /**
 	This is the chartloader class. it loads in charts, but also exports charts, the chart parameters are based on the type of chart, 
@@ -42,7 +42,7 @@ class ChartLoader
 
 					for (songNotes in section.sectionNotes)
 					{
-						var daStrumTime:Float = songNotes[0] - Init.gameSettings['Offset'][1]; // - | late, + | early
+						var daStrumTime:Float = songNotes[0] - Init.trueSettings['Offset']; // - | late, + | early
 						var daNoteData:Int = Std.int(songNotes[1] % 4);
 						// define the note's animation (in accordance to the original game)!
 						var daNoteAlt:Float = 0;
@@ -73,9 +73,9 @@ class ChartLoader
 							oldNote = null;
 
 						// create the new note
-						var swagNote:Note = new Note(daStrumTime, daNoteData, daNoteAlt, oldNote);
-						if (PlayState.isPixel)
-							swagNote.foreverMods.get('type')[0] = 1;
+						var swagNote:Note = ForeverAssets.generateArrow(PlayState.assetModifier, daStrumTime, daNoteData, 0, daNoteAlt);
+						// set note speed
+						swagNote.noteSpeed = songData.speed;
 
 						// set the note's length (sustain note)
 						swagNote.sustainLength = songNotes[2];
@@ -91,10 +91,10 @@ class ChartLoader
 						for (susNote in 0...Math.floor(susLength))
 						{
 							oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
-							var sustainNote:Note = new Note(daStrumTime + (Conductor.stepCrochet * susNote) + Conductor.stepCrochet, daNoteData, daNoteAlt,
-								oldNote, true);
-							if (PlayState.isPixel)
-								sustainNote.foreverMods.get('type')[0] = 1;
+							var sustainNote:Note = ForeverAssets.generateArrow(PlayState.assetModifier,
+								daStrumTime + (Conductor.stepCrochet * susNote) + Conductor.stepCrochet, daNoteData, 0, daNoteAlt, true, oldNote);
+							// if (PlayState.isPixel)
+							//	sustainNote.foreverMods.get('type')[0] = 1;
 							sustainNote.scrollFactor.set();
 
 							unspawnNotes.push(sustainNote);
@@ -128,12 +128,8 @@ class ChartLoader
 	}
 
 	public static function returnUnspawnNotes()
-	{
 		return unspawnNotes;
-	}
 
 	public static function flushUnspawnNotes()
-	{
 		unspawnNotes = [];
-	}
 }

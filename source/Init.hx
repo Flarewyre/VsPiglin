@@ -1,11 +1,16 @@
 import flixel.FlxG;
 import flixel.FlxState;
 import flixel.input.keyboard.FlxKey;
+import gameFolder.meta.CoolUtil;
 import gameFolder.meta.InfoHud;
 import gameFolder.meta.data.Highscore;
+import gameFolder.meta.data.dependency.Discord;
 import gameFolder.meta.state.*;
+import gameFolder.meta.state.charting.*;
 import openfl.filters.BitmapFilter;
 import openfl.filters.ColorMatrixFilter;
+
+using StringTools;
 
 /**
 	This is the initialisation class. if you ever want to set anything before the game starts or call anything then this is probably your best bet.
@@ -14,12 +19,99 @@ import openfl.filters.ColorMatrixFilter;
 **/
 class Init extends FlxState
 {
-	// GLOBAL VALUES (FOR SAVING)
+	/*
+		Okay so here we'll set custom settings. As opposed to the previous options menu, everything will be handled in here with no hassle.
+		This will read what the second value of the key's array is, and then it will categorise it, telling the game which option to set it to.
+
+		0 - boolean, true or false checkmark
+		1 - choose string
+		2 - choose number (for fps so its low capped at 30)
+		3 - offsets, this is unused but it'd bug me if it were set to 0
+		might redo offset code since I didnt make it and it bugs me that it's hardcoded the the last part of the controls menu
+	 */
+	public static var FORCED = 'forced';
+	public static var NOT_FORCED = 'not forced';
+
 	public static var gameSettings:Map<String, Dynamic> = [
-		'Downscroll' => [false, 0], 'Auto Pause' => [true, 1], 'FPS Counter' => [true, 2], 'Memory Counter' => [true, 3], 'Debug Info' => [false, 4],
-		'Reduced Movements' => [false, 5], 'Display Accuracy' => [true, 10], "Deuteranopia" => [false, 6], "Protanopia" => [false, 7],
-		"Tritanopia" => [false, 8], 'No camera note movement' => [false, 9], 'Offset' => [false, 0],
+		'Downscroll' => [
+			false,
+			0,
+			'Whether to have the strumline vertically flipped in gameplay.',
+			NOT_FORCED
+		],
+		'Auto Pause' => [true, 0, '', NOT_FORCED],
+		'FPS Counter' => [true, 0, 'Whether to display the FPS counter.', NOT_FORCED],
+		'Memory Counter' => [
+			true,
+			0,
+			'Whether to display approximately how much memory is being used.',
+			NOT_FORCED
+		],
+		'Debug Info' => [false, 0, 'Whether to display information like your game state.', NOT_FORCED],
+		'Reduced Movements' => [
+			false,
+			0,
+			'Whether to reduce movements, like icons bouncing or beat zooms in gameplay.',
+			NOT_FORCED
+		],
+		'Display Accuracy' => [true, 0, 'Whether to display your accuracy on screen.', NOT_FORCED],
+		'Disable Antialiasing' => [
+			false,
+			0,
+			'Whether to disable Anti-aliasing. Helps improve performance in FPS.',
+			NOT_FORCED
+		],
+		'No Camera Note Movement' => [
+			false,
+			0,
+			'When enabled, left and right notes no longer move the camera.',
+			NOT_FORCED
+		],
+		'Use Forever Chart Editor' => [
+			true,
+			0,
+			'When enabled, uses the custom Forever Engine chart editor!',
+			NOT_FORCED
+		],
+		'Disable Note Splashes' => [
+			false,
+			0,
+			'Whether to disable note splashes in gameplay. Useful if you find them distracting.',
+			NOT_FORCED
+		],
+		// custom ones lol
+		'Offset' => [0, 3],
+		'Filter' => [
+			'none',
+			1,
+			'Choose a filter for colorblindness.',
+			NOT_FORCED,
+			['none', 'Deuteranopia', 'Protanopia', 'Tritanopia']
+		],
+		"UI Skin" => ['default', 1, 'Choose a UI Skin for ratings, combo, etc.', NOT_FORCED, ''],
+		"Note Skin" => ['default', 1, 'Choose a note skin.', NOT_FORCED, ''],
+		"Framerate Cap" => [120, 1, 'Define your maximum FPS.', NOT_FORCED, ['']],
+		"Opaque Arrows" => [false, 0, "Makes the arrows at the top of the screen opaque again.", NOT_FORCED],
+		"Opaque Holds" => [false, 0, "Huh, why isnt the trail cut off?", NOT_FORCED],
+		'Ghost Tapping' => [
+			false,
+			0,
+			"Enables Ghost Tapping, allowing you to press inputs without missing.",
+			NOT_FORCED
+		],
+		'Centered Notefield' => [false, 0, "Center the notes, disables the enemy's notes."],
+		"Custom Titlescreen" => [
+			false,
+			0,
+			"Enables the custom Forever Engine titlescreen! (only effective with a restart)",
+			FORCED
+		],
+		'Camera-fixed Judgements' => [false, 0, ""],
+		'Display Miss Count' => [false, 0, "When enabled, displays the amount of misses you have in a song."],
 	];
+
+	public static var trueSettings:Map<String, Dynamic> = [];
+	public static var settingsDescriptions:Map<String, String> = [];
 
 	public static var gameControls:Map<String, Dynamic> = [
 		'UP' => [[FlxKey.UP, W], 2],
@@ -32,8 +124,6 @@ class Init extends FlxState
 		'RESET' => [[R, null], 7]
 	];
 
-	// SETTING MAPS
-	public static var settingsMap:Array<Dynamic> = new Array<Dynamic>();
 	public static var filters:Array<BitmapFilter> = []; // the filters the game has active
 	/// initalise filters here
 	public static var gameFilters:Map<String, {filter:BitmapFilter, ?onUpdate:Void->Void}> = [
@@ -66,31 +156,72 @@ class Init extends FlxState
 		}
 	];
 
-	///
-
 	override public function create():Void
 	{
-		FlxG.save.bind('funkin', 'forever');
+		FlxG.save.bind('foreverengine-options');
 		Highscore.load();
 
 		loadSettings();
 		loadControls();
 
+		#if !html5
+		Main.updateFramerate(trueSettings.get("Framerate Cap"));
+		#end
+
 		// apply saved filters
 		FlxG.game.setFilters(filters);
 
-		Main.switchState(new TitleState());
+		// Some additional changes to default HaxeFlixel settings, both for ease of debugging
+		// and usability.
+		FlxG.fixedTimestep = false; // This ensures that the game is not tied to the FPS
+		FlxG.mouse.useSystemCursor = true; // Use system cursor because it's prettier
+		FlxG.mouse.visible = false; // Hide mouse on start
+
+		gotoTitleScreen();
+	}
+
+	private function gotoTitleScreen()
+	{
+		if (trueSettings.get("Custom Titlescreen"))
+			Main.switchState(this, new CustomTitlescreen());
+		else
+			Main.switchState(this, new TitleState());
 	}
 
 	public static function loadSettings():Void
 	{
-		if ((FlxG.save.data.gameSettings != null) && (Lambda.count(FlxG.save.data.gameSettings) == Lambda.count(gameSettings)))
-			gameSettings = FlxG.save.data.gameSettings;
-		/* else // was originally gonna have something to reset the settings or some shit but then
-			I realised that was unneccessary and would just break savefiles sometimes so if you launch an older version
-			it automatically wipes your save, I only want it to wipe your save if its like updated settings or something
-			lol
-		}*/
+		// set the true settings array
+		// only the first variable will be saved! the rest are for the menu stuffs
+
+		// IF YOU WANT TO SAVE MORE THAN ONE VALUE MAKE YOUR VALUE AN ARRAY INSTEAD
+		for (setting in gameSettings.keys())
+			trueSettings.set(setting, gameSettings.get(setting)[0]);
+
+		// NEW SYSTEM, INSTEAD OF REPLACING THE WHOLE THING I REPLACE EXISTING KEYS
+		// THAT WAY IT DOESNT HAVE TO BE DELETED IF THERE ARE SETTINGS CHANGES
+		if (FlxG.save.data.settings != null)
+		{
+			var settingsMap:Map<String, Dynamic> = FlxG.save.data.settings;
+			for (singularSetting in settingsMap.keys())
+				if (gameSettings.get(singularSetting) != null && gameSettings.get(singularSetting)[3] != FORCED)
+					trueSettings.set(singularSetting, FlxG.save.data.settings.get(singularSetting));
+		}
+
+		// lemme fix that for you
+		if (!Std.isOfType(trueSettings.get("Framerate Cap"), Int)
+			|| trueSettings.get("Framerate Cap") < 30
+			|| trueSettings.get("Framerate Cap") > 360)
+			trueSettings.set("Framerate Cap", 30);
+
+		// 'hardcoded' ui skins
+		gameSettings.get("UI Skin")[4] = CoolUtil.returnAssetsLibrary('UI');
+		if (!gameSettings.get("UI Skin")[4].contains(trueSettings.get("UI Skin")))
+			trueSettings.set("UI Skin", 'default');
+		gameSettings.get("Note Skin")[4] = CoolUtil.returnAssetsLibrary('noteskins/notes');
+		if (!gameSettings.get("Note Skin")[4].contains(trueSettings.get("Note Skin")))
+			trueSettings.set("Note Skin", 'default');
+
+		saveSettings();
 
 		updateAll();
 	}
@@ -99,12 +230,14 @@ class Init extends FlxState
 	{
 		if ((FlxG.save.data.gameControls != null) && (Lambda.count(FlxG.save.data.gameControls) == Lambda.count(gameControls)))
 			gameControls = FlxG.save.data.gameControls;
+
+		saveControls();
 	}
 
 	public static function saveSettings():Void
 	{
 		// ez save lol
-		FlxG.save.data.gameSettings = gameSettings;
+		FlxG.save.data.settings = trueSettings;
 		FlxG.save.flush();
 
 		updateAll();
@@ -118,17 +251,26 @@ class Init extends FlxState
 
 	public static function updateAll()
 	{
-		InfoHud.updateDisplayInfo(gameSettings.get('FPS Counter')[0], gameSettings.get('Debug Info')[0], gameSettings.get('Memory Counter')[0]);
+		InfoHud.updateDisplayInfo(trueSettings.get('FPS Counter'), trueSettings.get('Debug Info'), trueSettings.get('Memory Counter'));
 
+		#if !html5
+		Main.updateFramerate(trueSettings.get("Framerate Cap"));
+		#end
+
+		///*
 		filters = [];
 		FlxG.game.setFilters(filters);
 
-		for (string in gameFilters.keys())
+		var theFilter:String = trueSettings.get('Filter');
+		if (gameFilters.get(theFilter) != null)
 		{
-			if (gameSettings.get(string)[0])
-				filters.push(gameFilters.get(string).filter);
+			var realFilter = gameFilters.get(theFilter).filter;
+
+			if (realFilter != null)
+				filters.push(realFilter);
 		}
 
 		FlxG.game.setFilters(filters);
+		// */
 	}
 }

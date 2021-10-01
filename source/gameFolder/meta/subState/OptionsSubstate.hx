@@ -16,7 +16,6 @@ using StringTools;
 class OptionsSubstate extends MusicBeatSubState
 {
 	private var curSelection = 0;
-	private var totalSize = Lambda.count(Init.gameControls);
 	private var submenuGroup:FlxTypedGroup<FlxBasic>;
 	private var submenuoffsetGroup:FlxTypedGroup<FlxBasic>;
 
@@ -27,14 +26,14 @@ class OptionsSubstate extends MusicBeatSubState
 	{
 		// call the options menu
 		var bg = new FlxSprite(-85);
-		bg.loadGraphic(Paths.image('menuDesat'));
+		bg.loadGraphic(Paths.image('menus/base/menuDesat'));
 		bg.scrollFactor.x = 0;
 		bg.scrollFactor.y = 0.18;
 		bg.setGraphicSize(Std.int(bg.width * 1.1));
 		bg.updateHitbox();
 		bg.screenCenter();
 		bg.color = 0xCE64DF;
-		bg.antialiasing = true;
+		bg.antialiasing = (!Init.trueSettings.get('Disable Antialiasing'));
 		add(bg);
 
 		super.create();
@@ -284,7 +283,8 @@ class OptionsSubstate extends MusicBeatSubState
 
 				FlxFlicker.flicker(otherKeys.members[(curSelection * 2) + curHorizontalSelection], 0.5, 0.06 * 2, true, false, function(flick:FlxFlicker)
 				{
-					openSubmenu();
+					if (submenuOpen)
+						openSubmenu();
 				});
 			}
 			else if (controls.BACK)
@@ -316,7 +316,7 @@ class OptionsSubstate extends MusicBeatSubState
 
 	private function openSubmenu()
 	{
-		offsetTemp = Init.gameSettings['Offset'][1];
+		offsetTemp = Init.trueSettings['Offset'];
 
 		submenu.visible = true;
 		if (curSelection != keyOptions.length - 1)
@@ -386,7 +386,7 @@ class OptionsSubstate extends MusicBeatSubState
 		{
 			if (FlxG.keys.justPressed.ENTER)
 			{
-				Init.gameSettings['Offset'][1] = offsetTemp;
+				Init.trueSettings['Offset'] = offsetTemp;
 				closeSubmenu();
 			}
 			else if (FlxG.keys.justPressed.ESCAPE)

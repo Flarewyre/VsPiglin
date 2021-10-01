@@ -15,9 +15,9 @@ import flixel.tweens.FlxTween;
 import flixel.ui.FlxBar;
 import flixel.util.FlxColor;
 import flixel.util.FlxTimer;
-import gameFolder.meta.Conductor;
 import gameFolder.meta.CoolUtil;
 import gameFolder.meta.InfoHud;
+import gameFolder.meta.data.Conductor;
 import gameFolder.meta.data.Timings;
 import gameFolder.meta.state.PlayState;
 
@@ -46,25 +46,16 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 		// call the initializations and stuffs
 		super();
 
-		// small info bar, kinda like the KE watermark
-		// based on scoretxt which I will set up as well
-		var infoDisplay:String = CoolUtil.dashToSpace(PlayState.SONG.song) + ' - ' + CoolUtil.difficultyFromNumber(PlayState.storyDifficulty)
-			+ " - FF BETA v0.2.1.1";
-
-		infoBar = new FlxText(5, FlxG.height - 30, 0, infoDisplay, 20);
-		infoBar.setFormat(Paths.font("vcr.ttf"), 16, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		infoBar.scrollFactor.set();
-		add(infoBar);
-
 		// fnf mods
 		var scoreDisplay:String = 'beep bop bo skdkdkdbebedeoop brrapadop';
 
 		// le healthbar setup
 		var barY = FlxG.height * 0.875;
-		if (Init.gameSettings.get('Downscroll')[0])
+		if (Init.trueSettings.get('Downscroll'))
 			barY = 64;
 
-		healthBarBG = new FlxSprite(0, barY).loadGraphic(Paths.image('UI/healthBar'));
+		healthBarBG = new FlxSprite(0,
+			barY).loadGraphic(Paths.image(ForeverTools.returnSkinAsset('healthBar', PlayState.assetModifier, PlayState.changeableSkin, 'UI')));
 		healthBarBG.screenCenter(X);
 		healthBarBG.scrollFactor.set();
 		add(healthBarBG);
@@ -88,6 +79,16 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 		updateScoreText();
 		scoreBar.scrollFactor.set();
 		add(scoreBar);
+
+		// small info bar, kinda like the KE watermark
+		// based on scoretxt which I will set up as well
+		var infoDisplay:String = CoolUtil.dashToSpace(PlayState.SONG.song) + ' - ' + CoolUtil.difficultyFromNumber(PlayState.storyDifficulty)
+			+ " - Forever BETA v" + Main.gameVersion;
+
+		infoBar = new FlxText(5, FlxG.height - 30, 0, infoDisplay, 20);
+		infoBar.setFormat(Paths.font("vcr.ttf"), 16, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		infoBar.scrollFactor.set();
+		add(infoBar);
 	}
 
 	override public function update(elapsed:Float)
@@ -95,10 +96,9 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 		// pain, this is like the 7th attempt
 		healthBar.percent = (PlayState.health * 50);
 
-		updateScoreText();
-
-		iconP1.setGraphicSize(Std.int(FlxMath.lerp(150, iconP1.width, 0.50)));
-		iconP2.setGraphicSize(Std.int(FlxMath.lerp(150, iconP2.width, 0.50)));
+		var iconLerp = 0.5;
+		iconP1.setGraphicSize(Std.int(FlxMath.lerp(150, iconP1.width, iconLerp)));
+		iconP2.setGraphicSize(Std.int(FlxMath.lerp(150, iconP2.width, iconLerp)));
 
 		iconP1.updateHitbox();
 		iconP2.updateHitbox();
@@ -119,26 +119,32 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 			iconP2.animation.curAnim.curFrame = 0;
 	}
 
-	private function updateScoreText()
+	public function updateScoreText()
 	{
 		var importSongScore = PlayState.songScore;
 		var importPlayStateCombo = PlayState.combo;
 		var importMisses = PlayState.misses;
 		scoreBar.text = 'Score: $importSongScore';
 		// testing purposes
-		var displayAccuracy:Bool = Init.gameSettings.get('Display Accuracy')[0];
+		var displayAccuracy:Bool = Init.trueSettings.get('Display Accuracy');
 		if (displayAccuracy)
 		{
-			scoreBar.text += ' // Accuracy: ' + Std.string(Math.floor(Timings.accuracy * 100) / 100) + '%';
+			scoreBar.text += ' // Accuracy: ' + Std.string(Math.floor(Timings.getAccuracy() * 100) / 100) + '%' + Timings.comboDisplay;
+			if (Init.trueSettings.get('Display Miss Count'))
+				scoreBar.text += ' // Misses: ' + Std.string(PlayState.misses);
 			scoreBar.text += ' // Rank: ' + Std.string(Timings.returnScoreRating().toUpperCase());
 		}
 
 		scoreBar.x = ((FlxG.width / 2) - (scoreBar.width / 2));
+
+		// update playstate
+		PlayState.detailsSub = scoreBar.text;
+		PlayState.updateRPC(false);
 	}
 
 	public function beatHit()
 	{
-		if (!Init.gameSettings.get('Reduced Movements')[0])
+		if (!Init.trueSettings.get('Reduced Movements'))
 		{
 			iconP1.setGraphicSize(Std.int(iconP1.width + 45));
 			iconP2.setGraphicSize(Std.int(iconP2.width + 45));
