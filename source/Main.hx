@@ -6,13 +6,13 @@ import flixel.FlxGame;
 import flixel.FlxSprite;
 import flixel.FlxState;
 import flixel.util.FlxColor;
-import gameFolder.meta.*;
-import gameFolder.meta.data.PlayerSettings;
-import gameFolder.meta.data.dependency.Discord;
 import haxe.CallStack.StackItem;
 import haxe.CallStack;
 import haxe.io.Path;
 import lime.app.Application;
+import meta.*;
+import meta.data.PlayerSettings;
+import meta.data.dependency.Discord;
 import openfl.Assets;
 import openfl.Lib;
 import openfl.display.FPS;
@@ -68,9 +68,7 @@ class Main extends Sprite
 	public static var mainClassState:Class<FlxState> = Init; // Determine the main class state of the game
 	public static var framerate:Int = 120; // How many frames per second the game should run at.
 
-	public static var gameVersion:String = '0.2.3.1';
-
-	public static var loadedAssets:Array<FlxBasic> = [];
+	public static var gameVersion:String = '0.2.4.2';
 
 	var zoom:Float = -1; // If -1, zoom is automatically calculated to fit the window dimensions.
 	var skipSplash:Bool = true; // Whether to skip the flixel splash screen that appears in release mode.
@@ -86,14 +84,12 @@ class Main extends Sprite
 		[ [songs to use], [characters in songs], [color of week], name of week ]
 	**/
 	public static var gameWeeks:Array<Dynamic> = [
-		[['Tutorial'], ['gf'], [FlxColor.fromRGB(129, 100, 223)], 'Funky Beginnings'],
 		[
 			['Mellohi', 'Stal', 'Pigstep'],
 			['piglin', 'piglin', 'piglin'],
 			[FlxColor.fromRGB(128, 32, 32)],
-			'THE NETHER'
-		],
-
+			'The Nether'
+		]
 	];
 
 	// most of these variables are just from the base game!
@@ -172,19 +168,21 @@ class Main extends Sprite
 	/*  This is used to switch "rooms," to put it basically. Imagine you are in the main menu, and press the freeplay button.
 		That would change the game's main class to freeplay, as it is the active class at the moment.
 	 */
+	public static var lastState:FlxState;
+
 	public static function switchState(curState:FlxState, target:FlxState)
 	{
 		// this is for a dumb feature that has no use except for cool extra info
 		// though I suppose this could be of use to people who want to load things between classes and such
+
+		// save the last state for comparison checks
+		lastState = curState;
 
 		// credit for the idea and a bit of the execution https://github.com/ninjamuffin99/Funkin/pull/1083
 		mainClassState = Type.getClass(target);
 
 		// load the state
 		FlxG.switchState(target);
-
-		// this dont work yet but maybe soon
-		dumpCache(curState);
 	}
 
 	public static function updateFramerate(newFramerate:Int)
@@ -202,15 +200,24 @@ class Main extends Sprite
 		}
 	}
 
-	public static function dumpCache(curState:FlxState)
+	public static function dumpCache()
 	{
-		/*
-			for (asset in loadedAssets)
+		///* SPECIAL THANKS TO HAYA
+		@:privateAccess
+		for (key in FlxG.bitmap._cache.keys())
+		{
+			var obj = FlxG.bitmap._cache.get(key);
+			if (obj != null)
 			{
-				curState.remove(asset);
+				Assets.cache.removeBitmapData(key);
+				FlxG.bitmap._cache.remove(key);
+				obj.destroy();
 			}
-			// */
+		}
+		Assets.cache.clear("songs");
+		// */
 	}
+	
 
 	function onCrash(e:UncaughtErrorEvent):Void
 	{
